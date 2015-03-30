@@ -1,0 +1,20 @@
+name: bmp085
+values:
+- name: temperature
+  range:
+    min: 233.15
+    max: 358.15
+  resolution: 5
+  file: temp0_input
+  multiplier: 0.1
+  addend: 273.15
+- name: pressure
+  range:
+    min: 30000
+    max: 110000
+  resolution: 30
+  file: pressure0_input
+device:
+  bus: i2c
+  id: 0x77
+  driver: bmp085

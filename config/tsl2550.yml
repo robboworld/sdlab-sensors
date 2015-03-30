@@ -1,0 +1,12 @@
+name: tsl2550
+values:
+- name: illuminance
+  range:
+    min: 0
+    max: 1846
+  resolution: 500
+  file: lux1_input
+device:
+  bus: i2c
+  id: 0x39
+  driver: tsl2550

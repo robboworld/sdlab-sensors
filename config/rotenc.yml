@@ -1,0 +1,12 @@
+name: rotenc
+values:
+- name: angle
+  range:
+    min: -26353589.26664456725120544
+    max: 26353589.25437271967530251
+  resolution: 50
+  command: sdsensr -b ${bus} -a ${addr} -t i32
+  multiplier: 0.01227184630308513
+device:
+  bus: i2c
+  id: 0x06

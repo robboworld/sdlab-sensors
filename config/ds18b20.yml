@@ -1,0 +1,13 @@
+name: ds18b20
+values:
+- name: temperature
+  range:
+    min: 218.15
+    max: 398.15
+  resolution: 900
+  re: t=([0-9.]+)
+  multiplier: 0.001
+  addend: 273.15
+device:
+  bus: w1
+  id: 0x28
