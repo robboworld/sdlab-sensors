@@ -6,7 +6,7 @@ values:
     max: 6.283185307
   resolution: 50
   re: ^([0-9]+)
-  multiplier: 0,049087385
+  multiplier: 0.049087385
   addend: 0
   command: sdsensr -b ${bus} -a ${addr} -t i8
 device:
