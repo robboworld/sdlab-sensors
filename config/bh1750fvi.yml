@@ -1,0 +1,11 @@
+name: bh1750fvi
+values:
+- name: illuminance
+  range:
+    min: 0
+    max: 65535
+  resolution: 200
+  command: sd_bh1750fvi -b ${bus} -a ${addr}
+device:
+  bus: i2c
+  id: 0x23
