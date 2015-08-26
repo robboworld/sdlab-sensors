@@ -1,7 +1,7 @@
 /*
  Sample code for the BH1750 Light sensor for Raspberry Pi
  Connection:
- VCC-5v (Raspberry pin 1)
+ VCC-5v or 3.3v (Raspberry pin 1)
  GND-GND(Raspberry pin 6)
  SCL-SCL(Raspberry pin 5)
  SDA-SDA(Raspberry pin 3)
@@ -82,7 +82,8 @@ int main(int argc, char **argv)
 	retCode = write(fd, (void *)wbuf, 1);
 if(DEBUG)printf("Power On retCode=%d\n",retCode);
 	if (retCode < 0) {
-		printf("PowerOn error\n");
+		fprintf(stderr, "PowerOn error (%d)\n", retCode);
+		//printf("PowerOn error\n");
 		close(fd);
 		exit(1);
 	}
@@ -92,7 +93,8 @@ if(DEBUG)printf("Power On retCode=%d\n",retCode);
 	retCode = write(fd, (void *)wbuf, 1);
 if(DEBUG)printf("ContinuHigh retCode=%d\n",retCode);
 	if (retCode < 0) {
-		printf("ContinuHigh error\n");
+		fprintf(stderr, "ContinueHigh error (%d)\n", retCode);
+		//printf("ContinuHigh error\n");
 		close(fd);
 		exit(1);
 	}
@@ -102,7 +104,8 @@ if(DEBUG)printf("ContinuHigh retCode=%d\n",retCode);
 	retCode = write(fd, (void *)wbuf, 1);
 if(DEBUG)printf("OneTimeHigh retCode=%d\n",retCode);
 	if (retCode < 0) {
-		printf("OneTimeHigh error\n");
+		fprintf(stderr, "OneTimeHigh error (%d)\n", retCode);
+		//printf("OneTimeHigh error\n");
 		close(fd);
 		exit(1);
 	}
@@ -111,15 +114,15 @@ if(DEBUG)printf("OneTimeHigh retCode=%d\n",retCode);
 	usleep(DATAWAIT);
 
 	readSize = read(fd, buf, 2);
-if(DEBUG)printf("read readSize=%d %x %x\n",readSize,buf[0],buf[1]);
+if(DEBUG)printf("read readSize=%d %#x %#x\n",readSize,buf[0],buf[1]);
 
 	// Calculate value in lux
 	res = buf[0]*256+buf[1];
-if(DEBUG)printf("res=%x\n",res);
+if(DEBUG)printf("res=%#x\n",res);
 	lux = res / 1.2;
 
 	// Output result
-	printf("%d\n",lux);
+	printf("%u\n",lux);
 
 	wbuf[0] = PowerDown;
 	retCode = write(fd, (void *)wbuf, 1);
