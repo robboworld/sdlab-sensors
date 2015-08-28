@@ -18,9 +18,7 @@
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 #include <sys/ioctl.h>
-//#include <pthread.h>
 #include <semaphore.h>
-
 
 #define BH1750FVI_I2C_ADDRESS 0x23 // ADDR > 0.7 VCC)
 //#define BH1750FVI_I2C_ADDRESS  0x53 // ADDR < 0.3 VCC) 
@@ -53,7 +51,7 @@ int main(int argc, char **argv)
 	char *filepath;
 	int i;
 
-	sem_t *mutex;
+	sem_t *smph;
 	char *SEM_NAME = (char*)malloc(15);
 
 	parseopts(argc, argv);
@@ -66,29 +64,27 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-
 	// init semaphore
-	
 	sprintf(SEM_NAME, "i2c_bus_%d_sem", bus);
-	mutex = sem_open(SEM_NAME,O_CREAT,0644, 1);
-	if(mutex == SEM_FAILED)
-	{
+	smph = sem_open(SEM_NAME,O_CREAT,0644, 1);
+	if (smph == SEM_FAILED) {
 		fputs("unable to create semaphore.\n", stderr);
 		sem_unlink(SEM_NAME);
+		free(SEM_NAME);
 		exit(-1);
 	}
 
 	filepath = (char*)malloc(12);
 	sprintf(filepath, "/dev/i2c-%d", bus);
 
+	sem_wait(smph);
 
-	sem_wait(mutex);
 	// Open port for reading and writing
 	if ((fd = open(filepath, O_RDWR)) < 0) {
 		fprintf(stderr, "Can not open file '%s'\n", filepath);
 		free(filepath);
-		sem_post(mutex);
-		sem_close(mutex);
+		sem_post(smph);
+		sem_close(smph);
 		free(SEM_NAME);
 		exit(1);
 	}
@@ -98,10 +94,9 @@ int main(int argc, char **argv)
 	if (ioctl(fd, I2C_SLAVE, addr) < 0) {
 		fputs("Failed to acquire bus access and/or talk to slave.\n", stderr);
 		close(fd);
-		sem_post(mutex);
-		sem_close(mutex);
+		sem_post(smph);
+		sem_close(smph);
 		free(SEM_NAME);
-
 		exit(1);
 	}
 
@@ -112,10 +107,9 @@ if(DEBUG)printf("Power On retCode=%d\n",retCode);
 		fprintf(stderr, "PowerOn error (%d)\n", retCode);
 		//printf("PowerOn error\n");
 		close(fd);
-		sem_post(mutex);
-		sem_close(mutex);
+		sem_post(smph);
+		sem_close(smph);
 		free(SEM_NAME);
-
 		exit(1);
 	}
 
@@ -127,10 +121,9 @@ if(DEBUG)printf("ContinuHigh retCode=%d\n",retCode);
 		fprintf(stderr, "ContinueHigh error (%d)\n", retCode);
 		//printf("ContinuHigh error\n");
 		close(fd);
-		sem_post(mutex);
-		sem_close(mutex);
+		sem_post(smph);
+		sem_close(smph);
 		free(SEM_NAME);
-
 		exit(1);
 	}
 */
@@ -142,10 +135,9 @@ if(DEBUG)printf("OneTimeHigh retCode=%d\n",retCode);
 		fprintf(stderr, "OneTimeHigh error (%d)\n", retCode);
 		//printf("OneTimeHigh error\n");
 		close(fd);
-		sem_post(mutex);
-		sem_close(mutex);
+		sem_post(smph);
+		sem_close(smph);
 		free(SEM_NAME);
-
 		exit(1);
 	}
 
@@ -167,8 +159,8 @@ if(DEBUG)printf("res=%#x\n",res);
 	retCode = write(fd, (void *)wbuf, 1);
 	close(fd);
 
-	sem_post(mutex);
-	sem_close(mutex);
+	sem_post(smph);
+	sem_close(smph);
 	free(SEM_NAME);
 
 	exit (0);
