@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 		break;
 	default:
 		fputs("unreachable\n", stderr);
-		return(-1);
+		exit(-1);
 		break;
 	}
 	return 0;
@@ -76,6 +76,7 @@ int parseopts(int argc, char *argv[])
 				bus = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
@@ -83,6 +84,7 @@ int parseopts(int argc, char *argv[])
 				addr = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
@@ -95,6 +97,7 @@ int parseopts(int argc, char *argv[])
 			case '?':
 			default :
 				usage(argv[0]);
+				free(endp);
 				exit(1);
 				break;
 			}
@@ -128,6 +131,7 @@ struct reading getdata()
 		usleep(TIMEOUT);
 		if (read(f, buf, 4) < 4) {
 			free(buf);
+			close(f);
 			return d;
 		}
 		state = buf[0] >> 6;
@@ -143,6 +147,7 @@ struct reading getdata()
 		fprintf(stderr, "error: device reported state %d\n", state);
 		break;
 	}
+	free(buf);
 	close(f);
 	return d;
 }
