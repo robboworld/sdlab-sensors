@@ -51,8 +51,8 @@ int main(int argc, char *argv[])
 	int d = getdata();
 	printf("%d\n", d);
 
-	sem_post(mutex);
-	sem_close(mutex);
+	sem_post(smph);
+	sem_close(smph);
 	free(SEM_NAME);
 
 	return 0;
