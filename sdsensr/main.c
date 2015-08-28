@@ -8,6 +8,7 @@
 #include <math.h>
 #include <getopt.h>
 #include <inttypes.h>
+#include <semaphore.h>
 
 int bus = -1;
 int addr = -1;
@@ -33,8 +34,27 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 		exit(1);
 	}
+
+	sem_t *smph;
+	char *SEM_NAME = (char*)malloc(15);
+	sprintf(SEM_NAME, "i2c_bus_%d_sem", bus);
+	smph = sem_open(SEM_NAME,O_CREAT,0644,1);
+	if (smph == SEM_FAILED) {
+		fputs("unable to create semaphore\n", stderr);
+		sem_unlink(SEM_NAME);
+		free(SEM_NAME);
+		exit(-1);
+	}
+
+	sem_wait(smph);
+
 	int d = getdata();
 	printf("%d\n", d);
+
+	sem_post(mutex);
+	sem_close(mutex);
+	free(SEM_NAME);
+
 	return 0;
 }
 
