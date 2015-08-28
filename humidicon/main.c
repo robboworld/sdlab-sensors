@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <getopt.h>
+#include <semaphore.h>
 
 const int TIMEOUT = 1000;
 
@@ -37,6 +38,20 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 		exit(1);
 	}
+
+	sem_t *smph;
+	char *SEM_NAME = (char*)malloc(15);
+	sprintf(SEM_NAME, "i2c_bus_%d_sem", bus);
+	smph = sem_open(SEM_NAME,O_CREAT,0644, 1);
+	if (smph == SEM_FAILED) {
+		fputs("unable to create semaphore\n", stderr);
+		sem_unlink(SEM_NAME);
+		free(SEM_NAME);
+		exit(-1);
+	}
+
+	sem_wait(smph);
+
 	struct reading d = getdata();
 	switch (value) {
 	case TEMP:
@@ -50,9 +65,17 @@ int main(int argc, char *argv[])
 		break;
 	default:
 		fputs("unreachable\n", stderr);
-		return(-1);
+		sem_post(smph);
+		sem_close(smph);
+		free(SEM_NAME);
+		exit(-1);
 		break;
 	}
+
+	sem_post(smph);
+	sem_close(smph);
+	free(SEM_NAME);
+
 	return 0;
 }
 
@@ -76,6 +99,7 @@ int parseopts(int argc, char *argv[])
 				bus = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
@@ -83,6 +107,7 @@ int parseopts(int argc, char *argv[])
 				addr = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
@@ -95,6 +120,7 @@ int parseopts(int argc, char *argv[])
 			case '?':
 			default :
 				usage(argv[0]);
+				free(endp);
 				exit(1);
 				break;
 			}
@@ -128,6 +154,7 @@ struct reading getdata()
 		usleep(TIMEOUT);
 		if (read(f, buf, 4) < 4) {
 			free(buf);
+			close(f);
 			return d;
 		}
 		state = buf[0] >> 6;
@@ -143,6 +170,7 @@ struct reading getdata()
 		fprintf(stderr, "error: device reported state %d\n", state);
 		break;
 	}
+	free(buf);
 	close(f);
 	return d;
 }
