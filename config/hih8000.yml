@@ -1,17 +1,17 @@
 name: hih8000
 values:
-- name: temperature
-  range:
-    min: 233.15
-    max: 398.15
-  resolution: 50
-  command: humidicon -b ${bus} -a ${addr} -t
 - name: humidity
   range:
     min: 0
     max: 100
   resolution: 50
   command: humidicon -b ${bus} -a ${addr} -h
+- name: temperature
+  range:
+    min: 233.15
+    max: 398.15
+  resolution: 50
+  command: humidicon -b ${bus} -a ${addr} -t
 device:
   bus: i2c
   id: 0x27
