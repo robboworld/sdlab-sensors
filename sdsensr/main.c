@@ -10,8 +10,13 @@
 #include <inttypes.h>
 #include <semaphore.h>
 
+// Uncomment for nonblocking bus mode
+//#define NONBLOCK
+
+#ifndef NONBLOCK
 sem_t *smph;
 char *SEM_NAME;
+#endif
 
 int bus = -1;
 int addr = -1;
@@ -38,6 +43,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+#ifndef NONBLOCK
 	SEM_NAME = (char*)malloc(15);
 	sprintf(SEM_NAME, "i2c_bus_%d_sem", bus);
 	smph = sem_open(SEM_NAME,O_CREAT,0644,1);
@@ -49,20 +55,25 @@ int main(int argc, char *argv[])
 	}
 
 	sem_wait(smph);
+#endif
 
 	int d = 0;
 	int n = getdata(&d);
 	if (n <= 0) {
+#ifndef NONBLOCK
 		sem_post(smph);
 		sem_close(smph);
 		free(SEM_NAME);
+#endif
 		exit(1);
 	}
 	printf("%d\n", d);
 
+#ifndef NONBLOCK
 	sem_post(smph);
 	sem_close(smph);
 	free(SEM_NAME);
+#endif
 
 	return 0;
 }
