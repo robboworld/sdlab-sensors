@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 	int i;
 
 	sem_t *smph;
-	char *SEM_NAME = (char*)malloc(15);
+	char *SEM_NAME;
 
 	parseopts(argc, argv);
 	if (addr < 0) {
@@ -65,6 +65,7 @@ int main(int argc, char **argv)
 	}
 
 	// init semaphore
+	SEM_NAME = (char*)malloc(15);
 	sprintf(SEM_NAME, "i2c_bus_%d_sem", bus);
 	smph = sem_open(SEM_NAME,O_CREAT,0644, 1);
 	if (smph == SEM_FAILED) {
@@ -74,10 +75,10 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
+	sem_wait(smph);
+
 	filepath = (char*)malloc(12);
 	sprintf(filepath, "/dev/i2c-%d", bus);
-
-	sem_wait(smph);
 
 	// Open port for reading and writing
 	if ((fd = open(filepath, O_RDWR)) < 0) {
@@ -163,7 +164,7 @@ if(DEBUG)printf("res=%#x\n",res);
 	sem_close(smph);
 	free(SEM_NAME);
 
-	exit (0);
+	exit(0);
 }
 
 int parseopts(int argc, char *argv[])
@@ -184,6 +185,7 @@ int parseopts(int argc, char *argv[])
 				bus = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
@@ -191,12 +193,14 @@ int parseopts(int argc, char *argv[])
 				addr = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
 			case '?':
 			default :
 				usage(argv[0]);
+				free(endp);
 				exit(1);
 				break;
 			}
