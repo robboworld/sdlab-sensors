@@ -10,20 +10,23 @@
 #include <inttypes.h>
 #include <semaphore.h>
 
+sem_t *smph;
+char *SEM_NAME;
+
 int bus = -1;
 int addr = -1;
-int (*getdata)();
+int (*getdata)(int *data);
 
 int opendev(int flags);
 int parseopts(int argc, char *argv[]);
 int usage(char *name);
 
-int get8();
-int get16();
-int get32();
-int getu8();
-int getu16();
-int getu32();
+int get8(int *data);
+int get16(int *data);
+int get32(int *data);
+int getu8(int *data);
+int getu16(int *data);
+int getu32(int *data);
 int getbytes(char *buf, int size);
 
 int main(int argc, char *argv[])
@@ -35,8 +38,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	sem_t *smph;
-	char *SEM_NAME = (char*)malloc(15);
+	SEM_NAME = (char*)malloc(15);
 	sprintf(SEM_NAME, "i2c_bus_%d_sem", bus);
 	smph = sem_open(SEM_NAME,O_CREAT,0644,1);
 	if (smph == SEM_FAILED) {
@@ -48,7 +50,14 @@ int main(int argc, char *argv[])
 
 	sem_wait(smph);
 
-	int d = getdata();
+	int d = 0;
+	int n = getdata(&d);
+	if (n <= 0) {
+		sem_post(smph);
+		sem_close(smph);
+		free(SEM_NAME);
+		exit(1);
+	}
 	printf("%d\n", d);
 
 	sem_post(smph);
@@ -77,6 +86,7 @@ int parseopts(int argc, char *argv[])
 				bus = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
@@ -84,6 +94,7 @@ int parseopts(int argc, char *argv[])
 				addr = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
@@ -100,15 +111,16 @@ int parseopts(int argc, char *argv[])
 					break;
 				case 'u':
 					if (strcmp(optarg + 1, "8") == 0) {
-						getdata =getu8;
+						getdata = getu8;
 					} else if (strcmp(optarg + 1, "16") == 0) {
-						getdata =getu16;
+						getdata = getu16;
 					} else if (strcmp(optarg + 1, "32") == 0) {
-						getdata =getu32;
+						getdata = getu32;
 					};
 					break;
 				default :
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 					break;
 				}
@@ -116,6 +128,7 @@ int parseopts(int argc, char *argv[])
 			case '?':
 			default :
 				usage(argv[0]);
+				free(endp);
 				exit(1);
 				break;
 			}
@@ -130,7 +143,7 @@ int usage(char *name)
 	return fprintf(stderr, "usage: %s --bus=<bus> --address=<addr> [--type=<type>]\n", name);
 }
 
-int get8()
+int get8(int *data)
 {
 	int8_t d = 0;
 	const int size = sizeof(d);
@@ -138,16 +151,19 @@ int get8()
 	char *byte;
 	if (getbytes(buf, size) < size) {
 		fputs("error reading data\n", stderr);
-		exit(1);
+		free(buf);
+		return 0;
 	}
 	for (byte = buf; byte < (buf + size); byte++) {
 		d = d << 8 | (int16_t)(*byte);
 	}
 	free(buf);
-	return (int)d;
+
+	*data = (int)d;
+	return size;
 }
 
-int get16()
+int get16(int *data)
 {
 	int16_t d = 0;
 	const int size = sizeof(d);
@@ -155,16 +171,19 @@ int get16()
 	char *byte;
 	if (getbytes(buf, size) < size) {
 		fputs("error reading data\n", stderr);
-		exit(1);
+		free(buf);
+		return 0;
 	}
 	for (byte = buf; byte < (buf + size); byte++) {
 		d = d << 8 | (int16_t)(*byte);
 	}
 	free(buf);
-	return (int)d;
+
+	*data = (int)d;
+	return size;
 }
 
-int get32()
+int get32(int *data)
 {
 	int32_t d = 0;
 	const int size = sizeof(d);
@@ -172,16 +191,19 @@ int get32()
 	char *byte;
 	if (getbytes(buf, size) < size) {
 		fputs("error reading data\n", stderr);
-		exit(1);
+		free(buf);
+		return 0;
 	}
 	for (byte = buf; byte < (buf + size); byte++) {
 		d = d << 8 | (int16_t)(*byte);
 	}
 	free(buf);
-	return (int)d;
+
+	*data = (int)d;
+	return size;
 }
 
-int getu8()
+int getu8(int *data)
 {
 	uint8_t d = 0;
 	const int size = sizeof(d);
@@ -189,16 +211,19 @@ int getu8()
 	char *byte;
 	if (getbytes(buf, size) < size) {
 		fputs("error reading data\n", stderr);
-		exit(1);
+		free(buf);
+		return 0;
 	}
 	for (byte = buf; byte < (buf + size); byte++) {
 		d = d << 8 | (int16_t)(*byte);
 	}
 	free(buf);
-	return (int)d;
+
+	*data = (int)d;
+	return size;
 }
 
-int getu16()
+int getu16(int *data)
 {
 	uint16_t d = 0;
 	const int size = sizeof(d);
@@ -206,16 +231,19 @@ int getu16()
 	char *byte;
 	if (getbytes(buf, size) < size) {
 		fputs("error reading data\n", stderr);
-		exit(1);
+		free(buf);
+		return 0;
 	}
 	for (byte = buf; byte < (buf + size); byte++) {
 		d = d << 8 | (int16_t)(*byte);
 	}
 	free(buf);
-	return (int)d;
+
+	*data = (int)d;
+	return size;
 }
 
-int getu32()
+int getu32(int *data)
 {
 	uint32_t d = 0;
 	const int size = sizeof(d);
@@ -223,13 +251,16 @@ int getu32()
 	char *byte;
 	if (getbytes(buf, size) < size) {
 		fputs("error reading data\n", stderr);
-		exit(1);
+		free(buf);
+		return 0;
 	}
 	for (byte = buf; byte < (buf + size); byte++) {
 		d = d << 8 | (int16_t)(*byte);
 	}
 	free(buf);
-	return (int)d;
+
+	*data = (int)d;
+	return size;
 }
 
 int getbytes(char *buf, int size)
