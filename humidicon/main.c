@@ -8,6 +8,9 @@
 #include <getopt.h>
 #include <semaphore.h>
 
+// Uncomment for nonblocking bus mode
+//#define NONBLOCK
+
 const int TIMEOUT = 1000;
 
 enum {
@@ -39,6 +42,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+#ifndef NONBLOCK
 	sem_t *smph;
 	char *SEM_NAME = (char*)malloc(15);
 	sprintf(SEM_NAME, "i2c_bus_%d_sem", bus);
@@ -51,6 +55,7 @@ int main(int argc, char *argv[])
 	}
 
 	sem_wait(smph);
+#endif
 
 	struct reading d = getdata();
 	switch (value) {
@@ -65,16 +70,20 @@ int main(int argc, char *argv[])
 		break;
 	default:
 		fputs("unreachable\n", stderr);
+#ifndef NONBLOCK
 		sem_post(smph);
 		sem_close(smph);
 		free(SEM_NAME);
+#endif
 		exit(-1);
 		break;
 	}
 
+#ifndef NONBLOCK
 	sem_post(smph);
 	sem_close(smph);
 	free(SEM_NAME);
+#endif
 
 	return 0;
 }

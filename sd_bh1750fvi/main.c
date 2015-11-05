@@ -6,7 +6,7 @@
  SCL-SCL(Raspberry pin 5)
  SDA-SDA(Raspberry pin 3)
  ADD-NC or GND
- */ 
+ */
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -34,6 +34,9 @@
 #define OneTimeHigh   0x20
 #define OneTimeLow   0x23
 
+// Uncomment for nonblocking bus mode
+//#define NONBLOCK
+
 int bus = -1;
 int addr = -1;
 
@@ -51,8 +54,10 @@ int main(int argc, char **argv)
 	char *filepath;
 	int i;
 
+#ifndef NONBLOCK
 	sem_t *smph;
-	char *SEM_NAME = (char*)malloc(15);
+	char *SEM_NAME;
+#endif
 
 	parseopts(argc, argv);
 	if (addr < 0) {
@@ -64,7 +69,9 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+#ifndef NONBLOCK
 	// init semaphore
+	SEM_NAME = (char*)malloc(15);
 	sprintf(SEM_NAME, "i2c_bus_%d_sem", bus);
 	smph = sem_open(SEM_NAME,O_CREAT,0644, 1);
 	if (smph == SEM_FAILED) {
@@ -74,18 +81,21 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
+	sem_wait(smph);
+#endif
+
 	filepath = (char*)malloc(12);
 	sprintf(filepath, "/dev/i2c-%d", bus);
-
-	sem_wait(smph);
 
 	// Open port for reading and writing
 	if ((fd = open(filepath, O_RDWR)) < 0) {
 		fprintf(stderr, "Can not open file '%s'\n", filepath);
 		free(filepath);
+#ifndef NONBLOCK
 		sem_post(smph);
 		sem_close(smph);
 		free(SEM_NAME);
+#endif
 		exit(1);
 	}
 	free(filepath);
@@ -94,9 +104,11 @@ int main(int argc, char **argv)
 	if (ioctl(fd, I2C_SLAVE, addr) < 0) {
 		fputs("Failed to acquire bus access and/or talk to slave.\n", stderr);
 		close(fd);
+#ifndef NONBLOCK
 		sem_post(smph);
 		sem_close(smph);
 		free(SEM_NAME);
+#endif
 		exit(1);
 	}
 
@@ -107,9 +119,11 @@ if(DEBUG)printf("Power On retCode=%d\n",retCode);
 		fprintf(stderr, "PowerOn error (%d)\n", retCode);
 		//printf("PowerOn error\n");
 		close(fd);
+#ifndef NONBLOCK
 		sem_post(smph);
 		sem_close(smph);
 		free(SEM_NAME);
+#endif
 		exit(1);
 	}
 
@@ -121,9 +135,11 @@ if(DEBUG)printf("ContinuHigh retCode=%d\n",retCode);
 		fprintf(stderr, "ContinueHigh error (%d)\n", retCode);
 		//printf("ContinuHigh error\n");
 		close(fd);
+#ifndef NONBLOCK
 		sem_post(smph);
 		sem_close(smph);
 		free(SEM_NAME);
+#endif
 		exit(1);
 	}
 */
@@ -135,9 +151,11 @@ if(DEBUG)printf("OneTimeHigh retCode=%d\n",retCode);
 		fprintf(stderr, "OneTimeHigh error (%d)\n", retCode);
 		//printf("OneTimeHigh error\n");
 		close(fd);
+#ifndef NONBLOCK
 		sem_post(smph);
 		sem_close(smph);
 		free(SEM_NAME);
+#endif
 		exit(1);
 	}
 
@@ -159,11 +177,13 @@ if(DEBUG)printf("res=%#x\n",res);
 	retCode = write(fd, (void *)wbuf, 1);
 	close(fd);
 
+#ifndef NONBLOCK
 	sem_post(smph);
 	sem_close(smph);
 	free(SEM_NAME);
+#endif
 
-	exit (0);
+	exit(0);
 }
 
 int parseopts(int argc, char *argv[])
@@ -184,6 +204,7 @@ int parseopts(int argc, char *argv[])
 				bus = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
@@ -191,12 +212,14 @@ int parseopts(int argc, char *argv[])
 				addr = (int)strtol(optarg, endp, 10);
 				if (**endp != '\0' || *endp == optarg) {
 					usage(argv[0]);
+					free(endp);
 					exit(1);
 				}
 				break;
 			case '?':
 			default :
 				usage(argv[0]);
+				free(endp);
 				exit(1);
 				break;
 			}
