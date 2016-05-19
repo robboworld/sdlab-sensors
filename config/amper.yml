@@ -1,0 +1,12 @@
+name: amper
+values:
+- name: current
+  range:
+    min: -2.5
+    max: 2.5
+  resolution: 10
+  command: sdsensr -b ${bus} -a ${addr} -t f32
+  multiplier: 0.001
+device:
+  bus: i2c
+  id: 0x2a
