@@ -18,9 +18,16 @@ sem_t *smph;
 char *SEM_NAME;
 #endif
 
+enum {
+	DATA_INT,
+	DATA_FLOAT,
+};
+
 int bus = -1;
 int addr = -1;
 int (*getdata)(int *data);
+int (*getdataf)(long double *data);
+int datatype = DATA_INT;
 
 int opendev(int flags);
 int parseopts(int argc, char *argv[]);
@@ -32,11 +39,15 @@ int get32(int *data);
 int getu8(int *data);
 int getu16(int *data);
 int getu32(int *data);
+int getf32(long double *data);
+int getf64(long double *data);
+int getf80(long double *data);
 int getbytes(char *buf, int size);
 
 int main(int argc, char *argv[])
 {
 	getdata = get8;
+	getdataf = getf32;
 	parseopts(argc, argv);
 	if (bus < 0 || addr < 0) {
 		usage(argv[0]);
@@ -58,7 +69,20 @@ int main(int argc, char *argv[])
 #endif
 
 	int d = 0;
-	int n = getdata(&d);
+	long double df = 0;
+	int n = 0;
+
+	switch (datatype) {
+		case DATA_FLOAT:
+			n = getdataf(&df);
+			break;
+
+		case DATA_INT:
+		default :
+			n = getdata(&d);
+			break;
+	}
+
 	if (n <= 0) {
 #ifndef NONBLOCK
 		sem_post(smph);
@@ -67,7 +91,17 @@ int main(int argc, char *argv[])
 #endif
 		exit(1);
 	}
-	printf("%d\n", d);
+
+	switch (datatype) {
+		case DATA_FLOAT:
+			printf("%f\n", df);
+			break;
+
+		case DATA_INT:
+		default :
+			printf("%d\n", d);
+			break;
+	}
 
 #ifndef NONBLOCK
 	sem_post(smph);
@@ -112,6 +146,7 @@ int parseopts(int argc, char *argv[])
 			case 't':
 				switch (*optarg) {
 				case 'i':
+					datatype = DATA_INT;
 					if (strcmp(optarg + 1, "8") == 0) {
 						getdata = get8;
 					} else if (strcmp(optarg + 1, "16") == 0) {
@@ -121,12 +156,23 @@ int parseopts(int argc, char *argv[])
 					};
 					break;
 				case 'u':
+					datatype = DATA_INT;
 					if (strcmp(optarg + 1, "8") == 0) {
 						getdata = getu8;
 					} else if (strcmp(optarg + 1, "16") == 0) {
 						getdata = getu16;
 					} else if (strcmp(optarg + 1, "32") == 0) {
 						getdata = getu32;
+					};
+					break;
+				case 'f':
+					datatype = DATA_FLOAT;
+					if (strcmp(optarg + 1, "32") == 0) {
+						getdataf = getf32;
+					} else if (strcmp(optarg + 1, "64") == 0) {
+						getdataf = getf64;
+					} else if (strcmp(optarg + 1, "80") == 0) {
+						getdataf = getf80;
 					};
 					break;
 				default :
@@ -271,6 +317,63 @@ int getu32(int *data)
 	free(buf);
 
 	*data = (int)d;
+	return size;
+}
+
+int getf32(long double *data)
+{
+	float d = 0;
+	const int size = sizeof(d);
+	char *buf = (char*)malloc(size);
+	char *byte;
+	if (getbytes(buf, size) < size) {
+		fputs("error reading data\n", stderr);
+		free(buf);
+		return 0;
+	}
+
+	*data = *((float *)buf);
+
+	free(buf);
+
+	return size;
+}
+
+int getf64(long double *data)
+{
+	double d = 0;
+	const int size = sizeof(d);
+	char *buf = (char*)malloc(size);
+	char *byte;
+	if (getbytes(buf, size) < size) {
+		fputs("error reading data\n", stderr);
+		free(buf);
+		return 0;
+	}
+
+	*data = *((double *)buf);
+
+	free(buf);
+
+	return size;
+}
+
+int getf80(long double *data)
+{
+	long double d = 0;
+	const int size = sizeof(d);
+	char *buf = (char*)malloc(size);
+	char *byte;
+	if (getbytes(buf, size) < size) {
+		fputs("error reading data\n", stderr);
+		free(buf);
+		return 0;
+	}
+
+	*data = *((long double *)buf);
+
+	free(buf);
+
 	return size;
 }
 
