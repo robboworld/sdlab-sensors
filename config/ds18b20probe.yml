@@ -1,0 +1,12 @@
+name: ds18b20probe
+values:
+- name: temperature
+  range:
+    min: 218.15
+    max: 398.15
+  resolution: 1000
+  command: sdsensr -b ${bus} -a ${addr} -t f32
+  addend: 273.15
+device:
+  bus: i2c
+  id: 0x08
