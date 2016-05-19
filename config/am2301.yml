@@ -1,0 +1,18 @@
+name: am2301
+values:
+- name: humidity
+  range:
+    min: 0
+    max: 100
+  resolution: 2000
+  command: humidiamcon -b ${bus} -a ${addr} -h
+- name: temperature
+  range:
+    min: 233.15
+    max: 353.15
+  resolution: 2000
+  command: humidiamcon -b ${bus} -a ${addr} -t
+  addend: 273.15
+device:
+  bus: i2c
+  id: 0x10
