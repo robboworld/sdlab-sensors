@@ -15,4 +15,4 @@ values:
   addend: 273.15
 device:
   bus: i2c
-  id: 0x10
+  id: 0x26
