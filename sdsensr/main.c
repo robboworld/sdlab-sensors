@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <errno.h>
 #include <math.h>
 #include <getopt.h>
 #include <inttypes.h>
@@ -28,6 +30,7 @@ int addr = -1;
 int (*getdata)(int *data);
 int (*getdataf)(long double *data);
 int datatype = DATA_INT;
+int offset = 0;
 
 int opendev(int flags);
 int parseopts(int argc, char *argv[]);
@@ -49,7 +52,7 @@ int main(int argc, char *argv[])
 	getdata = get8;
 	getdataf = getf32;
 	parseopts(argc, argv);
-	if (bus < 0 || addr < 0) {
+	if (bus < 0 || addr < 0 || offset < 0 || (errno == ERANGE && (offset == LONG_MAX || offset == LONG_MIN)) || (errno != 0 && offset == 0)) {
 		usage(argv[0]);
 		exit(1);
 	}
@@ -114,11 +117,12 @@ int main(int argc, char *argv[])
 
 int parseopts(int argc, char *argv[])
 {
-	char *optstring = "b:a:t:";
+	char *optstring = "b:a:t:o:";
 	struct option longopts[] = {
 		{ "bus",         required_argument, NULL, 'b' },
 		{ "address",     required_argument, NULL, 'a' },
 		{ "type",        required_argument, NULL, 't'},
+		{ "offset",      required_argument, NULL, 'o'},
 		{ NULL,          0,                 NULL, 0 }
 	};
 	int li;
@@ -182,6 +186,14 @@ int parseopts(int argc, char *argv[])
 					break;
 				}
 				break;
+			case 'o':
+				offset = (int)strtol(optarg, endp, 10);
+				if (**endp != '\0' || *endp == optarg) {
+					usage(argv[0]);
+					free(endp);
+					exit(1);
+				}
+				break;
 			case '?':
 			default :
 				usage(argv[0]);
@@ -197,7 +209,19 @@ int parseopts(int argc, char *argv[])
 
 int usage(char *name)
 {
-	return fprintf(stderr, "usage: %s --bus=<bus> --address=<addr> [--type=<type>]\n", name);
+	return fprintf(stderr, 
+"Usage: %s --bus=<bus> --address=<addr> [--type=<type>] [--offset=<bytes>]\n\
+Simple utility to read data from i2c device.\n\
+\n\
+  -b, --bus         I2C bus number (0..N), required\n\
+  -a, --address     I2C device address number (0..127) in decimal, required\n\
+  -t, --type        Value type to read, may be int, unsigned int and float with size in bits in format: i8 | i16 | i32 | u8 | u16 | u32 | f32 | f64 | f80. Default: i8\n\
+  -o, --offset      Offset in bytes to skip from received data (0..N). Default: 0\n\
+\n\
+Examples:\n\
+   %s -b 1 -a 16 -t i32\n\
+   %s -b 0 -a 42 --type=f32 -o 4\n",
+name, name, name);
 }
 
 int get8(int *data)
@@ -380,10 +404,21 @@ int getf80(long double *data)
 int getbytes(char *buf, int size)
 {
 	int f;
+	int len = size+offset;
+
+	char *rbuf = (char*)malloc(len);
 	if ((f = opendev(O_RDONLY)) < 0) {
+		free(rbuf);
 		return 0;
 	}
-	int n = read(f, buf, size);
+	int n = read(f, rbuf, len) - offset;
+	if (n > 0) {
+		memcpy(buf, rbuf + offset, n);
+	}
+	else {
+		n = 0;
+	}
+	free(rbuf);
 	close(f);
 	return n;
 }
