@@ -5,13 +5,13 @@ values:
     min: 0
     max: 100
   resolution: 2000
-  command: humidiamcon -b ${bus} -a ${addr} -h
+  command: sdsensr -b ${bus} -a ${addr} -t f32
 - name: temperature
   range:
     min: 233.15
     max: 353.15
   resolution: 2000
-  command: humidiamcon -b ${bus} -a ${addr} -t
+  command: sdsensr -b ${bus} -a ${addr} -t f32 -o 4
   addend: 273.15
 device:
   bus: i2c
