@@ -1,4 +1,4 @@
-name: amper
+name: amperemeter
 values:
 - name: current
   range:
