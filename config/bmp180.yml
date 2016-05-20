@@ -1,0 +1,24 @@
+name: bmp180
+values:
+- name: pressure
+  range:
+    min: 30000
+    max: 110000
+  resolution: 100
+  command: sdsensr -b ${bus} -a ${addr} -t f32
+- name: temperature
+  range:
+    min: 233.15
+    max: 358.15
+  resolution: 100
+  command: sdsensr -b ${bus} -a ${addr} -t f32 -o 4
+  addend: 273.15
+- name: altitude
+  range:
+    min: -1000
+    max: 9000
+  resolution: 100
+  command: sdsensr -b ${bus} -a ${addr} -t f32 -o 8
+device:
+  bus: i2c
+  id: 0x10
