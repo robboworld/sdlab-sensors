@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
 	switch (datatype) {
 		case DATA_FLOAT:
-			printf("%f\n", df);
+			printf("%Lf\n", df);
 			break;
 
 		case DATA_INT:
