@@ -1,0 +1,18 @@
+# Debug stub sensor. Use file content as sensor data.
+name: test_filesens
+values:
+- name: angle
+  range:
+    min: -1000.0
+    max: 1000.0
+  resolution: 50
+  file: /var/lib/sdlab/test_filesens_angle.data
+- name: temperature
+  range:
+    min: 0.0
+    max: 200.0
+  resolution: 5
+  file: /var/lib/sdlab/test_filesens_temp.data
+device:
+  bus: file
+  id: 0xfe

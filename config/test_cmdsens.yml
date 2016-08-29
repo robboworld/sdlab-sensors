@@ -1,0 +1,26 @@
+# Debug stub sensor. Use random values from shell commands output as sensor data.
+name: test_cmdsens
+values:
+- name: temperature
+  range:
+    min: 0.0
+    max: 1000.0
+  resolution: 10
+  command: 'awk -v min=0 -v max=1000 ''BEGIN{srand(); print (min+rand()*(max-min+1))}'''  # float random 0.0-1000.0
+  #command: 'awk -v min=0 -v max=1000 ''BEGIN{srand(); print int(min+rand()*(max-min+1))}'''  # int random 0-1000
+- name: angle
+  range:
+    min: 100.0
+    max: 200.0
+  resolution: 5
+  command: 'echo $((RANDOM%200+100))'    # works only in bash shell
+- name: pressure
+  range:
+    min: 0.0
+    max: 65000.0
+  resolution: 5
+  re: '\s*([0-9.]+)'                     # trim
+  command: 'od -An -N2 -i /dev/urandom'  # returns 2 byte integer from random but prefixed with spaces
+device:
+  bus: file
+  id: 0xff
