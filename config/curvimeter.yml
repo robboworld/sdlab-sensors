@@ -1,0 +1,11 @@
+name: curvimeter
+values:
+- name: distance
+  range:
+    min: -32768.0
+    max: 32767.0
+  resolution: 10
+  command: sdsensr -b ${bus} -a ${addr} -t f32
+device:
+  bus: i2c
+  id: 0x16
