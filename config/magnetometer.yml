@@ -1,0 +1,12 @@
+name: magnetometer
+values:
+- name: induction 
+  range:
+    min: 0.0
+    max: 3.40282346638528859811704183484516925440e+38  # max float32?
+  resolution: 20  # ? a 67 milli-second typical delay should be allowed by the I²C master before querying the HMC5983 data registers for new measurements
+  command: sdsensr -b ${bus} -a ${addr} -t f32
+  multiplier: 10.0  # source in milliGauss, convert to Tesla: T = 10^4 * (mGs * 10^-3) 
+device:
+  bus: i2c
+  id: 0x14
